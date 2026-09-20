@@ -384,7 +384,7 @@
     <div class="glass-wave wave2"></div>
   </div>
 
-  <div class="toast" id="toast">壁紙を生成しました</div>
+  <div class="toast" id="toast">壁紙を生成しました（長押しで保存）</div>
 
   <div class="app-shell">
     <div class="player-card">
@@ -417,7 +417,7 @@
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
         </button>
 
-        <button class="main-play-btn" id="generateBtn" title="壁紙を生成してダウンロード">
+        <button class="main-play-btn" id="generateBtn" title="壁紙を生成してプレビュー表示">
           <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         </button>
 
@@ -610,7 +610,7 @@
     window.addEventListener('pointercancel', () => { isInteracting = false; });
 
     /* ==============================================================
-       変更点: iOSSafari対応の画像プレビュー生成ロジックへ変更
+       変更点: 出力用壁紙画像のCanvas描画を添付画像のようなデザインに修正
        ============================================================== */
     function generateWallpaper() {
       const offCanvas = document.createElement('canvas');
@@ -620,102 +620,92 @@
       offCanvas.height = h;
       const offCtx = offCanvas.getContext('2d');
 
-      // --- 1. 複雑なベースグラデーション（選択色ベース） ---
-      offCtx.fillStyle = selectedColor;
-      offCtx.fillRect(0, 0, w, h);
-
+      // --- 1. 背景のようなliquid grassデザインに修正 ---
+      // 選択された色からディープブルーへの深い縦方向のグラデーション
       const baseGrad = offCtx.createLinearGradient(0, 0, 0, h);
-      baseGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-      baseGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.1)');
-      baseGrad.addColorStop(1, 'rgba(10, 30, 60, 0.4)');
+      baseGrad.addColorStop(0, selectedColor); // 上部: 選択された色
+      baseGrad.addColorStop(1, '#030811'); // 下部: HTML背景のディープブルー
       offCtx.fillStyle = baseGrad;
       offCtx.fillRect(0, 0, w, h);
 
-      const cyanGlow = offCtx.createRadialGradient(w * 0.1, h * 0.8, 0, w * 0.1, h * 0.8, w * 1.2);
-      cyanGlow.addColorStop(0, 'rgba(0, 220, 255, 0.35)');
-      cyanGlow.addColorStop(1, 'rgba(0, 220, 255, 0)');
-      offCtx.fillStyle = cyanGlow;
-      offCtx.fillRect(0, 0, w, h);
-
-      const purpleGlow = offCtx.createRadialGradient(w * 0.9, h * 0.9, 0, w * 0.9, h * 0.9, w);
-      purpleGlow.addColorStop(0, 'rgba(130, 90, 255, 0.25)');
-      purpleGlow.addColorStop(1, 'rgba(130, 90, 255, 0)');
-      offCtx.fillStyle = purpleGlow;
-      offCtx.fillRect(0, 0, w, h);
-
-      const topGlow = offCtx.createRadialGradient(w * 0.2, h * 0.2, 0, w * 0.2, h * 0.2, w * 0.8);
-      topGlow.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-      topGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      offCtx.fillStyle = topGlow;
-      offCtx.fillRect(0, 0, w, h);
-
-      // --- 2. Liquid Glass 波形レイヤー ---
-      function drawSoftGlassFold(pathFunc, shadowParams, fillParams) {
+      // --- 2. Liquid Glass 波形レイヤーを添付画像に合わせて再構築 ---
+      // ヘルパー関数: 影、ハイライト、塗りを適用
+      function drawLiquidGlassLayer(pathFunc, shadowParams, highlightParams, fillParams) {
         offCtx.save();
         offCtx.beginPath();
         pathFunc(offCtx, w, h);
         offCtx.closePath();
 
-        offCtx.shadowColor = shadowParams.color;
-        offCtx.shadowBlur = shadowParams.blur;
-        offCtx.shadowOffsetX = shadowParams.offsetX;
-        offCtx.shadowOffsetY = shadowParams.offsetY;
+        // 影
+        if (shadowParams) {
+          offCtx.shadowColor = shadowParams.color;
+          offCtx.shadowBlur = shadowParams.blur;
+          offCtx.shadowOffsetX = shadowParams.offsetX;
+          offCtx.shadowOffsetY = shadowParams.offsetY;
+        }
 
+        // ガラスの厚み（塗り）
         const fillGrad = offCtx.createLinearGradient(0, 0, w, h);
         fillParams.stops.forEach(s => fillGrad.addColorStop(s.offset, s.color));
         offCtx.fillStyle = fillGrad;
         offCtx.fill();
 
+        offCtx.shadowColor = 'transparent'; // 影をリセット
+
+        // エッジのハイライト（光沢）
+        offCtx.lineWidth = highlightParams.width;
+        offCtx.strokeStyle = highlightParams.color;
+        offCtx.stroke();
+
         offCtx.restore();
       }
 
-      drawSoftGlassFold(
+      // 画面外から描画を始めることで「四角く囲われたフレーム感」を完全に消去
+
+      // レイヤー1（左上から中央へ広がる大きな波）
+      drawLiquidGlassLayer(
         (ctx, w, h) => {
-          ctx.moveTo(-200, -200); 
-          ctx.lineTo(w * 0.15, -200);
-          ctx.bezierCurveTo(w * -0.05, h * 0.3, w * 0.3, h * 0.7, w * 0.08, h + 200);
-          ctx.lineTo(-200, h + 200); 
+          ctx.moveTo(-100, -100); 
+          ctx.lineTo(w * 0.2, -100);
+          ctx.bezierCurveTo(w * 0.05, h * 0.4, w * 0.4, h * 0.8, w * 0.1, h + 100);
+          ctx.lineTo(-100, h + 100); 
         },
-        { color: 'rgba(5, 20, 50, 0.4)', blur: 60, offsetX: 20, offsetY: 10 },
+        { color: 'rgba(5, 20, 50, 0.5)', blur: 70, offsetX: 30, offsetY: 15 },
+        { width: 3, color: 'rgba(255, 255, 255, 0.4)' },
         {
           stops: [
-            { offset: 0, color: 'rgba(255,255,255,0.2)' },
-            { offset: 1, color: 'rgba(0,30,60,0.05)' }
+            { offset: 0, color: 'rgba(255,255,255,0.25)' },
+            { offset: 1, color: 'rgba(0,30,60,0.1)' }
           ]
         }
       );
 
-      drawSoftGlassFold(
+      // レイヤー2（右下から中央へ広がる小さな波）
+      drawLiquidGlassLayer(
         (ctx, w, h) => {
-          ctx.moveTo(w + 200, -200);
-          ctx.lineTo(w * 0.85, -200);
-          ctx.bezierCurveTo(w * 1.05, h * 0.35, w * 0.7, h * 0.65, w * 0.92, h + 200);
-          ctx.lineTo(w + 200, h + 200);
+          ctx.moveTo(w + 100, h + 100);
+          ctx.lineTo(w * 0.8, h + 100);
+          ctx.bezierCurveTo(w * 1.05, h * 0.6, w * 0.7, h * 0.3, w * 0.95, -100);
+          ctx.lineTo(w + 100, -100);
         },
-        { color: 'rgba(2, 10, 30, 0.5)', blur: 70, offsetX: -20, offsetY: 20 },
+        { color: 'rgba(2, 10, 30, 0.6)', blur: 80, offsetX: -30, offsetY: -15 },
+        { width: 2.5, color: 'rgba(255, 255, 255, 0.3)' },
         {
           stops: [
-            { offset: 0, color: 'rgba(0,20,50,0.1)' },
-            { offset: 1, color: 'rgba(255,255,255,0.08)' }
+            { offset: 0, color: 'rgba(0,20,50,0.15)' },
+            { offset: 1, color: 'rgba(255,255,255,0.12)' }
           ]
         }
       );
 
-      drawSoftGlassFold(
-        (ctx, w, h) => {
-          ctx.moveTo(-200, h + 200);
-          ctx.lineTo(-200, h * 0.88);
-          ctx.bezierCurveTo(w * 0.35, h * 0.82, w * 0.65, h * 0.96, w + 200, h * 0.9);
-          ctx.lineTo(w + 200, h + 200);
-        },
-        { color: 'rgba(5, 20, 40, 0.6)', blur: 50, offsetX: 0, offsetY: -10 },
-        {
-          stops: [
-            { offset: 0, color: 'rgba(255,255,255,0.15)' },
-            { offset: 1, color: 'rgba(10,30,50,0.25)' }
-          ]
-        }
-      );
+      // 上部の柔らかい拡散した光（Ambient Chill）
+      offCtx.save();
+      const topGlow = offCtx.createRadialGradient(w * 0.3, 0, 0, w * 0.3, 0, w * 0.8);
+      topGlow.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+      topGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      offCtx.fillStyle = topGlow;
+      offCtx.fillRect(0, 0, w, h * 0.4);
+      offCtx.restore();
 
       // --- 3. ランダムなHEXの抽出とLiquid Glass風テキスト（縦書き）描画 ---
       const imgData = offCtx.getImageData(0, 0, w, h).data;
