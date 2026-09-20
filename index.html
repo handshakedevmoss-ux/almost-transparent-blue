@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Almost Transparent Blue - Wallpaper & Ambient</title>
+  <style>
+    /* ==========================================
+       1. Design Tokens & Reset
+       ========================================== */
+    :root {
+      --bg-dark: #0a0c10;
+      /* --- 修正箇所：カードの背景色を透過させ、ソフトな色味に変更 --- */
+      /* rgba(20, 22, 26, 0.65) : わずかに青みを含んだダークグレーを65%透過 */
+      --card-bg: rgba(20, 22, 26, 0.65);
+      
+      --card-inner: #1a1d24;
+      --text-main: #f0f3f6;
+      --text-sub: #8e95a2;
+      --accent-glow: rgba(184, 218, 242, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      width: 100vw;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--bg-dark);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+      position: relative;
+    }
+
+    /* 背景の大気ボケ・アンビエントグラデーション */
+    .ambient-backdrop {
+      position: fixed;
+      top: -20%;
+      left: -20%;
+      width: 140%;
+      height: 140%;
+      background: radial-gradient(circle at 50% 35%, #234c6e 0%, #112338 50%, #060e17 85%);
+      filter: blur(50px);
+      z-index: 0;
+      transition: background 0.8s ease;
+      pointer-events: none;
+    }
+
+    /* メインコンテナ */
+    .app-shell {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* プレーヤー型カード本体 */
+    .player-card {
+      width: 100%;
+      background-color: var(--card-bg);
+      border-radius: 36px;
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      /* --- 追加箇所：透過を活かすためのエフェクト --- */
+      /* 背景をぼかすエフェクト（グラスモーフィズム） */
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      
+      /* リアルな影と、フチに当たる光のハイライト（透過カードを際立たせる） */
+      box-shadow: 
+        0 30px 60px -15px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    /* カード最上部：サブオプションアイコン */
+    .card-top-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding-right: 4px;
+    }
+    .more-dots {
+      display: flex;
+      gap: 4px;
+      cursor: pointer;
+      opacity: 0.6;
+    }
+    .more-dots span {
+      width: 4px;
+      height: 4px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* アートワーク領域（カラーピックキャンバス & 環境音ミュートボタン） */
+    .artwork-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+      cursor: crosshair;
+    }
+
+    #colorCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* 波形バッジ：アンビエント環境音トグルスイッチ（再生/ミュート） */
+    .waveform-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 7px 11px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      z-index: 20;
+    }
+    .waveform-badge:active { transform: scale(0.96); background: rgba(0, 0, 0, 0.6); }
+
+    .wave-bar {
+      width: 2.5px;
+      height: 12px;
+      background: #fff;
+      border-radius: 2px;
+      opacity: 0.5; /* 初期は静止・ミュート */
+      transition: opacity 0.3s ease, height 0.3s ease;
+    }
+
+    /* 再生中のアニメーション */
+    .playing .wave-bar {
+      opacity: 1;
+      animation: wave 1s ease-in-out infinite alternate;
+    }
+    .playing .wave-bar:nth-child(2) { height: 16px; animation-delay: 0.2s; animation-duration: 0.8s; }
+    .playing .wave-bar:nth-child(3) { height: 8px; animation-delay: 0.4s; animation-duration: 1.1s; }
+    .playing .wave-bar:nth-child(4) { height: 14px; animation-delay: 0.1s; animation-duration: 0.9s; }
+    @keyframes wave { 0% { transform: scaleY(0.5); } 100% { transform: scaleY(1); } }
+
+    /* タップポインタ（照準） */
+    .reticle {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), inset 0 0 4px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease-out;
+    }
+
+    /* メタデータ領域（番組名・エピソード名風） */
+    .metadata-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .episode-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: 0.05em;
+    }
+    .show-title {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    /* コントロール群（再生・ダウンロード） */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 4px;
+    }
+    .ctrl-icon {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      opacity: 0.75;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .ctrl-icon:active {
+      transform: scale(0.9);
+      opacity: 1;
+    }
+
+    /* メインの壁紙出力ボタン（再生ボタン位置） */
+    .main-play-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: none;
+      color: #0b0d11;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease, background 0.2s;
+    }
+    .main-play-btn:active {
+      transform: scale(0.94);
+      background: #e5e9f0;
+    }
+    .main-play-btn svg {
+      width: 28px;
+      height: 28px;
+      fill: #0b0d11;
+    }
+
+    /* サムネイル履歴トレイ */
+    .history-drawer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 4px;
+    }
+    .history-header {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .history-track {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .history-track::-webkit-scrollbar {
+      display: none;
+    }
+    .history-card {
+      flex: 0 0 52px;
+      aspect-ratio: 9 / 16;
+      border-radius: 10px;
+      background: #1c2027;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease;
+    }
+    .history-card:active {
+      transform: scale(0.95);
+    }
+    .history-card canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Toast通知 */
+    .toast {
+      position: fixed;
+      top: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #0b0d11;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(-15px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 環境光バックドロップ -->
+  <div class="ambient-backdrop" id="backdrop"></div>
+
+  <!-- トースト通知 -->
+  <div class="toast" id="toast">壁紙をダウンロードしました</div>
+
+  <div class="app-shell">
+    
+    <!-- プレーヤー型カード本体 -->
+    <div class="player-card">
+      
+      <div class="card-top-bar">
+        <div class="more-dots" id="timeCycleBtn" title="時間帯を変更">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- ① アートワーク（カラーピックキャンバス & 環境音ミュートボタン） -->
+      <div class="artwork-container" id="artworkBox">
+        <canvas id="colorCanvas"></canvas>
+        
+        <!-- 波形バッジ：アンビエント環境音トグルスイッチ（再生/ミュート） -->
+        <div class="waveform-badge" id="ambientToggleBtn" title="アンビエント環境音を再生/ミュート">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+
+        <div class="reticle" id="reticle"></div>
+      </div>
+
+      <!-- ② メタデータブロック（番組名・エピソード名風） -->
+      <div class="metadata-block">
+        <div class="episode-title" id="phaseTitle">ZENITH SKY</div>
+        <div class="show-title" id="hexReadout">HEX: #C2E2F6 · 1080 × 2340 px</div>
+      </div>
+
+      <!-- ③ コントロール群（再生・ダウンロード） -->
+      <div class="controls-row">
+        <!-- 前の時間帯 -->
+        <button class="ctrl-icon" id="prevPhaseBtn" title="前の時間帯">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+          </svg>
+        </button>
+
+        <!-- メイン：壁紙出力ボタン（再生ボタン位置） -->
+        <button class="main-play-btn" id="generateBtn" title="壁紙を生成してダウンロード">
+          <svg viewBox="0 0 24 24">
+            <!-- ダウンロードアローとトレイアイコン -->
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+        </button>
+
+        <!-- 次の時間帯 -->
+        <button class="ctrl-icon" id="nextPhaseBtn" title="次の時間帯">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ④ 下部サムネイル履歴（直近10件） -->
+    <div class="history-drawer">
+      <div class="history-header">Recent Drops (Max 10)</div>
+      <div class="history-track" id="historyTrack"></div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ==========================================
+       2. JavaScript - Core Logic & Synthesis
+       ========================================== */
+    
+    // 4フェーズ定義（色彩・大気・音響特性）
+    const PHASES = [
+      { id: 'dawn', name: 'DAWN MIST', topColor: '#EDF4F8', bottomColor: '#C4E1EE', accent: '#96CDE6', backdrop: 'radial-gradient(circle at 50% 35%, #2a4356 0%, #152430 50%, #080d12 85%)', soundType: 'highPass', soundVol: 0.12 },
+      { id: 'zenith', name: 'ZENITH SKY', topColor: '#F0F8FF', bottomColor: '#A8D8F8', accent: '#64B5F6', backdrop: 'radial-gradient(circle at 50% 35%, #234c6e 0%, #112338 50%, #060e17 85%)', soundType: 'bandPass', soundVol: 0.15 },
+      { id: 'dusk', name: 'WILIGHT DUSK', topColor: '#FAF4FC', bottomColor: '#C9C2E8', accent: '#9C88D9', backdrop: 'radial-gradient(circle at 50% 35%, #3d2f52 0%, #201530 50%, #0d0615 85%)', soundType: 'lowPass', soundVol: 0.13 },
+      { id: 'night', name: 'THEREAL NIGHT', topColor: '#EBF2F8', bottomColor: '#8CAECB', accent: '#53789E', backdrop: 'radial-gradient(circle at 50% 35%, #1d2c3f 0%, #0f1722 50%, #05080c 85%)', soundType: 'pureNoise', soundVol: 0.08 }
+    ];
+
+    let currentPhaseIndex = 1; // 初期値: 昼 (Zenith)
+    let selectedColor = '#C2E2F6';
+    let historyList = [];
+
+    // DOM要素
+    const canvas = document.getElementById('colorCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const artworkBox = document.getElementById('artworkBox');
+    const reticle = document.getElementById('reticle');
+    const backdrop = document.getElementById('backdrop');
+    const phaseTitle = document.getElementById('phaseTitle');
+    const hexReadout = document.getElementById('hexReadout');
+    const generateBtn = document.getElementById('generateBtn');
+    const prevPhaseBtn = document.getElementById('prevPhaseBtn');
+    const nextPhaseBtn = document.getElementById('nextPhaseBtn');
+    const timeCycleBtn = document.getElementById('timeCycleBtn');
+    const historyTrack = document.getElementById('historyTrack');
+    const toast = document.getElementById('toast');
+    const ambientToggleBtn = document.getElementById('ambientToggleBtn');
+
+    // Canvas解像度設定
+    function setupCanvas() {
+      const rect = artworkBox.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      // 画面上のCSSピクセルではなく、物理ピクセルでCanvasを描画
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      drawAtmosphere();
+      
+      // 初期ポインタ位置（中央）
+      updatePointer(rect.width * 0.5, rect.height * 0.45);
+    }
+
+    // 大気グラデーション描画
+    function drawAtmosphere() {
+      const phase = PHASES[currentPhaseIndex];
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 線形グラデーション（天空）
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, phase.topColor);
+      grad.addColorStop(1, phase.bottomColor);
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // 円形グラデーション（柔らかな光彩ハイライト）
+      const radial = ctx.createRadialGradient(w * 0.4, h * 0.35, 10, w * 0.4, h * 0.35, w * 0.7);
+      radial.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+      radial.addColorStop(0.5, 'rgba(255, 255, 255, 0.15)');
+      radial.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = radial;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // フェーズ更新（色彩と音響の両方を切り替え）
+    function switchPhase(direction) {
+      currentPhaseIndex = (currentPhaseIndex + direction + PHASES.length) % PHASES.length;
+      const phase = PHASES[currentPhaseIndex];
+      
+      // UIと背景を更新
+      backdrop.style.background = phase.backdrop;
+      phaseTitle.textContent = phase.name;
+      drawAtmosphere();
+
+      // 現在のポインタ位置で色を再ピック
+      const rect = artworkBox.getBoundingClientRect();
+      const rx = parseFloat(reticle.style.left) || rect.width / 2;
+      const ry = parseFloat(reticle.style.top) || rect.height / 2;
+      pickColorAt(rx, ry);
+
+      // 再生中なら音質もシームレスに更新
+      updateAmbientSound();
+    }
+
+    // ピクセルカラー抽出 & UI同期
+    function pickColorAt(clientX, clientY) {
+      const rect = artworkBox.getBoundingClientRect();
+      // ボックス内の相対座標に変換
+      const x = Math.max(0, Math.min(clientX, rect.width));
+      const y = Math.max(0, Math.min(clientY, rect.height));
+
+      // Canvas上の物理座標に変換
+      const dpr = window.devicePixelRatio || 1;
+      const pixel = ctx.getImageData(x * dpr, y * dpr, 1, 1).data;
+      const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+
+      selectedColor = hex;
+      updatePointer(x, y);
+
+      // HEX値と透過度判定（白に近いほど透明度が高いと判定）
+      const luminance = (pixel[0] * 0.299 + pixel[1] * 0.587 + pixel[2] * 0.114) / 255;
+      const clarity = (luminance * 100).toFixed(1);
+
+      hexReadout.textContent = `HEX: ${hex.toUpperCase()} · CLARITY: ${clarity}%`;
+    }
+
+    function updatePointer(x, y) {
+      reticle.style.left = `${x}px`;
+      reticle.style.top = `${y}px`;
+    }
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+
+    // タッチ / ドラッグイベントバインド（Pointer Events）
+    let isInteracting = false;
+
+    function handleTouch(e) {
+      // ポータル（波形バッジ）の上なら処理しない
+      if (e.target.id === 'ambientToggleBtn' || e.target.closest('#ambientToggleBtn')) return;
+      const rect = artworkBox.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      pickColorAt(touch.clientX - rect.left, touch.clientY - rect.top);
+    }
+
+    artworkBox.addEventListener('pointerdown', (e) => {
+      isInteracting = true;
+      handleTouch(e);
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (isInteracting) handleTouch(e);
+    });
+    window.addEventListener('pointerup', () => { isInteracting = false; });
+    window.addEventListener('pointercancel', () => { isInteracting = false; });
+
+    // 1080×2340 px 縦長壁紙の生成 & ダウンロード
+    function generateWallpaper() {
+      // 隠しCanvasを作成
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 1080;
+      offCanvas.height = 2340;
+      const offCtx = offCanvas.getContext('2d');
+
+      // 選択色から背景色（冷たさを残した微細グレー #F6F8FA）への滑らかなフェード
+      const grad = offCtx.createLinearGradient(0, 0, 0, 2340);
+      grad.addColorStop(0, selectedColor); // 起点（捉えた青）
+      grad.addColorStop(0.35, selectedColor); // 中央付近まで維持
+      grad.addColorStop(1, '#F6F8FA'); // 純白手前へフェード
+
+      offCtx.fillStyle = grad;
+      offCtx.fillRect(0, 0, 1080, 2340);
+
+      // ダウンロードリンクを作成
+      const link = document.createElement('a');
+      link.download = `almost-transparent-blue-${Date.now()}.png`;
+      link.href = offCanvas.toDataURL('image/png');
+      link.click();
+
+      // サムネイル履歴に追加
+      pushHistory(selectedColor);
+      showToast('壁紙をダウンロードしました');
+    }
+
+    // サムネイル履歴管理
+    function pushHistory(color) {
+      historyList.unshift(color);
+      // 最大10件まで（FIFO）
+      if (historyList.length > 10) historyList.pop();
+      // LocalStorageに保存
+      localStorage.setItem('blue_history', JSON.stringify(historyList));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyTrack.innerHTML = '';
+      historyList.forEach((col, idx) => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.title = `Saved Drop #${idx + 1}`;
+
+        // 縦長サムネイルにグラデーションを描画
+        const c = document.createElement('canvas');
+        c.width = 54;
+        c.height = 96;
+        const cx = c.getContext('2d');
+        const g = cx.createLinearGradient(0, 0, 0, 96);
+        g.addColorStop(0, col);
+        g.addColorStop(1, '#F6F8FA');
+        cx.fillStyle = g;
+        cx.fillRect(0, 0, 54, 96);
+
+        card.appendChild(c);
+        
+        // 履歴をタップして色を復元
+        card.onclick = () => {
+          selectedColor = col;
+          hexReadout.textContent = `HEX: ${col.toUpperCase()} (RESTORED)`;
+          showToast('履歴から色を復元しました');
+        };
+        historyTrack.appendChild(card);
+      });
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // コントロールボタンイベント
+    prevPhaseBtn.addEventListener('click', () => switchPhase(-1));
+    nextPhaseBtn.addEventListener('click', () => switchPhase(1));
+    timeCycleBtn.addEventListener('click', () => switchPhase(1)); // ヘッダータップで時間変更
+    generateBtn.addEventListener('click', generateWallpaper);
+
+    // Initial load
+    window.addEventListener('load', () => {
+      // 履歴の復元
+      const saved = localStorage.getItem('blue_history');
+      if (saved) {
+        historyList = JSON.parse(saved);
+        renderHistory();
+      } else {
+        // デモ用の初期履歴
+        pushHistory('#B8DCF4');
+        pushHistory('#CDE8F8');
+        pushHistory('#A4D0EE');
+      }
+      setupCanvas();
+    });
+
+    window.addEventListener('resize', setupCanvas);
+
+
+    /* ==========================================
+       6. JavaScript - アンビエント環境音トグルスイッチ（アイデア1採用）
+       ========================================== */
+    let audioContext;
+    let whiteNoiseSource;
+    let filterNode;
+    let gainNode;
+    let isPlaying = false;
+
+    // 音声トグルのクリックイベント
+    ambientToggleBtn.addEventListener('click', toggleAmbientSound);
+
+    async function toggleAmbientSound() {
+      // ユーザーアクションを起点にAudioContextを初期化（ブラウザ制限回避）
+      if (!audioContext) {
+        initAudioContext();
+      }
+
+      if (!isPlaying) {
+        // 再生開始
+        // ボリュームを0からフェードイン（ポツッというノイズを防止）
+        gainNode.gain.setTargetAtTime(PHASES[currentPhaseIndex].soundVol, audioContext.currentTime, 0.05);
+        ambientToggleBtn.classList.add('playing');
+        isPlaying = true;
+        showToast('アンビエント環境音を再生中');
+      } else {
+        // ミュート
+        gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.05);
+        ambientToggleBtn.classList.remove('playing');
+        isPlaying = false;
+        showToast('環境音をミュートしました');
+      }
+    }
+
+    // Web Audio APIの初期化（ノイズ生成とフィルタチェーン構築）
+    function initAudioContext() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      // 1. ホワイトノイズバッファの生成
+      // 2秒のループバッファ
+      const bufferSize = 2 * audioContext.sampleRate;
+      const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1; // ランダムな波形
+      }
+
+      // バッファソース（ノイズ源）
+      whiteNoiseSource = audioContext.createBufferSource();
+      whiteNoiseSource.buffer = noiseBuffer;
+      whiteNoiseSource.loop = true;
+
+      // 2. フィルタノードの作成（時間帯別の音質変化用）
+      filterNode = audioContext.createBiquadFilter();
+
+      // 3. ゲインノード（ボリューム制御用）
+      gainNode = audioContext.createGain();
+      gainNode.gain.value = 0; // 初期値はミュート
+
+      // チェーンを繋ぐ: Source -> Filter -> Gain -> Destination（出力）
+      whiteNoiseSource.connect(filterNode);
+      filterNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      whiteNoiseSource.start();
+      updateAmbientSound(); // 現在の時間帯の音響特性を適用
+    }
+
+    // 時間帯フェーズに合わせてフィルタの特性（音質）を変更
+    function updateAmbientSound() {
+      if (!filterNode || !isPlaying) return;
+      const phase = PHASES[currentPhaseIndex];
+      const now = audioContext.currentTime;
+
+      // 時間帯別のフィルタ設定（アンビエントドローンの設計）
+      switch (phase.soundType) {
+        case 'highPass': // 朝: 冷たい、薄い風
+          filterNode.type = 'highpass';
+          filterNode.frequency.setTargetAtTime(1200, now, 0.5); // 高音を残す
+          filterNode.Q.setTargetAtTime(1, now, 0.5);
+          break;
+        case 'bandPass': // 昼: 爽やか、吹き抜ける風
+          filterNode.type = 'bandpass';
+          filterNode.frequency.setTargetAtTime(800, now, 0.5); // 中音域（風のコア）を強調
+          filterNode.Q.setTargetAtTime(1.5, now, 0.5);
+          break;
+        case 'lowPass': // 夕: 柔らかい、温かい大気音
+          filterNode.type = 'lowpass';
+          filterNode.frequency.setTargetAtTime(400, now, 0.5); // 低音を残す
+          filterNode.Q.setTargetAtTime(1, now, 0.5);
+          break;
+        case 'pureNoise': // 夜: 静寂、ホワイトノイズ
+        default:
+          filterNode.type = 'allpass'; // フィルタなし
+          break;
+      }
+      
+      // 時間帯別の標準ボリュームへフェード
+      gainNode.gain.setTargetAtTime(phase.soundVol, now, 0.5);
+    }
+
+  </script>
+</body>
+</html>```
