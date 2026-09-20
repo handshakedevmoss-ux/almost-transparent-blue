@@ -3,21 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Almost Transparent Blue - Liquid Glass Ambient</title>
+  <title>Almost Transparent Blue - Wallpaper & Ambient</title>
   <style>
     /* ==========================================
-       1. Design Tokens & Reset (Liquid Glass UI)
+       1. Design Tokens & Reset
        ========================================== */
     :root {
-      /* ディープブルーを基調とした背景色 */
-      --bg-dark: #030811;
-      /* ガラスマテリアル */
-      --glass-surface: rgba(16, 28, 48, 0.45);
-      --glass-highlight: rgba(255, 255, 255, 0.25);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      /* テキスト */
-      --text-main: #FFFFFF;
-      --text-sub: rgba(255, 255, 255, 0.55);
+      --bg-dark: #070a10;
+      --card-bg: rgba(14, 18, 26, 0.62);
+      --card-inner: #1a1d24;
+      --text-main: #f0f3f6;
+      --text-sub: #8e95a2;
+      --accent-glow: rgba(184, 218, 242, 0.4);
     }
 
     * {
@@ -44,7 +41,7 @@
     }
 
     /* ==========================================
-       光の光源レイヤー（奥側）
+       なめらかな大気グラデーション背景
        ========================================== */
     .ambient-backdrop {
       position: fixed;
@@ -53,57 +50,12 @@
       width: 140%;
       height: 140%;
       z-index: 0;
-      filter: blur(60px);
-      -webkit-filter: blur(60px);
-      transition: background 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      filter: blur(45px);
+      -webkit-filter: blur(45px);
+      transition: background 1.2s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
 
-    /* ==========================================
-       Liquid Glassの波形レイヤー（手前側）
-       ========================================== */
-    .liquid-ribbons {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: 1;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .glass-wave {
-      position: absolute;
-      /* ディープブルーのガラス素材 */
-      background: linear-gradient(135deg, rgba(20, 50, 95, 0.35), rgba(4, 10, 20, 0.8));
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      /* ガラスのエッジ反射（左と上を強く） */
-      border-top: 1.5px solid rgba(255, 255, 255, 0.2);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      /* 深い影と内側の反射 */
-      box-shadow: 
-        0 40px 80px rgba(0, 0, 0, 0.7),
-        inset 0 4px 15px rgba(255, 255, 255, 0.05);
-    }
-
-    /* 添付画像を踏襲した巨大なガラスのうねり */
-    .wave1 {
-      top: -15%; left: -20%;
-      width: 150vw; height: 65vh;
-      border-radius: 40% 60% 55% 45% / 50% 50% 50% 50%;
-      transform: rotate(-12deg);
-    }
-    .wave2 {
-      bottom: -20%; right: -25%;
-      width: 160vw; height: 75vh;
-      border-radius: 45% 55% 40% 60% / 40% 60% 40% 60%;
-      transform: rotate(18deg);
-      background: linear-gradient(135deg, rgba(30, 70, 120, 0.25), rgba(5, 12, 25, 0.9));
-    }
-
-    /* ==========================================
-       メインUIコンテナ
-       ========================================== */
     .app-shell {
       position: relative;
       z-index: 10;
@@ -115,59 +67,48 @@
       gap: 20px;
     }
 
-    /* プレーヤーカード（Liquid Glassデザイン） */
     .player-card {
       width: 100%;
-      background: linear-gradient(145deg, rgba(30, 55, 90, 0.35), rgba(10, 18, 30, 0.65));
-      border-radius: 42px;
+      background-color: var(--card-bg);
+      border-radius: 36px;
       padding: 20px 20px 24px;
       display: flex;
       flex-direction: column;
-      gap: 22px;
-      backdrop-filter: blur(35px) saturate(120%);
-      -webkit-backdrop-filter: blur(35px) saturate(120%);
-      /* ガラスエッジとシャドウ */
-      border-top: 1px solid var(--glass-highlight);
-      border-left: 1px solid var(--glass-border);
-      border-right: 1px solid rgba(255, 255, 255, 0.02);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+      gap: 20px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       box-shadow: 
-        0 30px 60px -10px rgba(0, 0, 0, 0.8),
-        inset 0 0 20px rgba(255, 255, 255, 0.03);
+        0 30px 60px -15px rgba(0, 0, 0, 0.65),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     .card-top-bar {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      padding-right: 6px;
+      padding-right: 4px;
     }
     .more-dots {
       display: flex;
-      gap: 5px;
+      gap: 4px;
       cursor: pointer;
-      opacity: 0.7;
+      opacity: 0.6;
     }
     .more-dots span {
-      width: 4.5px;
-      height: 4.5px;
+      width: 4px;
+      height: 4px;
       background: #fff;
       border-radius: 50%;
     }
 
-    /* アートワーク（Liquid Glassフレーム） */
     .artwork-container {
       position: relative;
       width: 100%;
       aspect-ratio: 1 / 1;
-      border-radius: 28px;
+      border-radius: 24px;
       overflow: hidden;
       background: #000;
-      /* フレームのエッジハイライト */
-      box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.6),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.15),
-        inset 0 2px 6px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
       cursor: crosshair;
       touch-action: none;
     }
@@ -178,27 +119,25 @@
       display: block;
     }
 
-    /* 波形バッジ（ガラスピル） */
     .waveform-badge {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 14px;
+      right: 14px;
       display: flex;
       align-items: center;
-      gap: 3.5px;
-      background: rgba(20, 35, 60, 0.4);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 9px 13px;
-      border-radius: 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.3);
-      border-left: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      gap: 3px;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
       cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
+      transition: background 0.2s, transform 0.1s;
       z-index: 30;
+      pointer-events: auto;
     }
-    .waveform-badge:active { transform: scale(0.92); background: rgba(20, 35, 60, 0.7); }
+    .waveform-badge:active { transform: scale(0.94); background: rgba(0, 0, 0, 0.65); }
 
     .wave-bar {
       width: 2.5px;
@@ -220,169 +159,151 @@
 
     .reticle {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      border: 1.5px solid #fff;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(2px);
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), inset 0 0 4px rgba(255, 255, 255, 0.5);
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), inset 0 0 4px rgba(0, 0, 0, 0.3);
       pointer-events: none;
       transform: translate(-50%, -50%);
       transition: transform 0.08s ease-out;
     }
 
-    /* テキスト（ガラスに刻まれたような透過感） */
     .metadata-block {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      margin-top: 4px;
+      gap: 6px;
+      margin-top: 2px;
     }
     .episode-title {
-      font-size: 1.4rem;
-      font-weight: 300;
-      letter-spacing: 0.1em;
-      background: linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.5) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 2px 10px rgba(255,255,255,0.1);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: 0.05em;
     }
     .show-title {
-      font-size: 0.8rem;
-      font-weight: 400;
-      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+      font-weight: 500;
       color: var(--text-sub);
     }
 
-    /* コントロール群 */
     .controls-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px 8px;
+      padding: 8px 16px 4px;
     }
     .ctrl-icon {
       background: none;
       border: none;
-      color: #fff;
+      color: var(--text-main);
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 0.75;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: opacity 0.2s, transform 0.15s;
     }
-    .ctrl-icon:active { transform: scale(0.85); opacity: 1; }
+    .ctrl-icon:active {
+      transform: scale(0.9);
+      opacity: 1;
+    }
 
-    /* メインボタン（Liquid Glassサークル） */
     .main-play-btn {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.02));
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
+      background: #ffffff;
       border: none;
-      border-top: 1px solid rgba(255,255,255,0.4);
-      border-left: 1px solid rgba(255,255,255,0.2);
-      border-bottom: 1px solid rgba(255,255,255,0.02);
-      border-right: 1px solid rgba(255,255,255,0.02);
+      color: #0b0d11;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 
-        0 15px 30px rgba(0, 0, 0, 0.4),
-        inset 0 2px 10px rgba(255, 255, 255, 0.1);
-      transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease, background 0.2s;
     }
     .main-play-btn:active {
-      transform: scale(0.92);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3), inset 0 2px 10px rgba(255, 255, 255, 0.1);
+      transform: scale(0.94);
+      background: #e5e9f0;
     }
     .main-play-btn svg {
-      width: 32px;
-      height: 32px;
-      fill: #fff;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      width: 28px;
+      height: 28px;
+      fill: #0b0d11;
     }
 
-    /* 履歴ドロワー（Liquid Glass） */
     .history-drawer {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       padding: 0 4px;
     }
     .history-header {
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       color: var(--text-sub);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-weight: 500;
-      padding-left: 4px;
+      letter-spacing: 0.08em;
+      font-weight: 600;
     }
     .history-track {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       overflow-x: auto;
       padding-bottom: 8px;
       scrollbar-width: none;
     }
-    .history-track::-webkit-scrollbar { display: none; }
-    
+    .history-track::-webkit-scrollbar {
+      display: none;
+    }
     .history-card {
       flex: 0 0 52px;
       aspect-ratio: 9 / 16;
-      border-radius: 14px;
-      background: rgba(20, 30, 50, 0.4);
-      border-top: 1px solid rgba(255, 255, 255, 0.25);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      background: #1c2027;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       overflow: hidden;
       cursor: pointer;
       position: relative;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
       transition: transform 0.2s ease;
     }
-    .history-card:active { transform: scale(0.9) translateY(2px); }
-    .history-card canvas { width: 100%; height: 100%; display: block; }
+    .history-card:active {
+      transform: scale(0.95);
+    }
+    .history-card canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-    /* トースト */
     .toast {
       position: fixed;
-      top: 30px;
-      background: rgba(30, 45, 70, 0.85);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 24px;
-      border-top: 1px solid rgba(255,255,255,0.2);
+      top: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #0b0d11;
+      padding: 10px 20px;
+      border-radius: 20px;
       font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
       opacity: 0;
-      transform: translateY(-20px);
-      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform: translateY(-15px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
       z-index: 100;
     }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
 
-  <!-- 光源となる大気グラデーション -->
+  <!-- なめらかな大気グラデーション背景 -->
   <div class="ambient-backdrop" id="backdrop"></div>
-
-  <!-- ディープブルーのLiquid Glass（リボン）レイヤー -->
-  <div class="liquid-ribbons">
-    <div class="glass-wave wave1"></div>
-    <div class="glass-wave wave2"></div>
-  </div>
 
   <div class="toast" id="toast">壁紙をダウンロードしました</div>
 
@@ -414,7 +335,7 @@
 
       <div class="controls-row">
         <button class="ctrl-icon" id="prevPhaseBtn" title="前の時間帯">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
         </button>
 
         <button class="main-play-btn" id="generateBtn" title="壁紙を生成してダウンロード">
@@ -422,20 +343,20 @@
         </button>
 
         <button class="ctrl-icon" id="nextPhaseBtn" title="次の時間帯">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
         </button>
       </div>
     </div>
 
     <div class="history-drawer">
-      <div class="history-header">Recent Drops</div>
+      <div class="history-header">Recent Drops (Max 10)</div>
       <div class="history-track" id="historyTrack"></div>
     </div>
   </div>
 
   <script>
     /* ==============================================================
-       ブルーを基調とした光源フェーズ定義
+       フェーズ定義
        ============================================================== */
     const PHASES = [
       {
@@ -443,11 +364,11 @@
         name: 'DAWN MIST',
         topColor: '#E2EAF2',
         midColor: '#5C8BA6',
-        bottomColor: '#1A2B3C',
+        bottomColor: '#1F3A4D',
         accentColor: '#FFFFFF',
         backdrop: `
           radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.4) 0%, transparent 60%),
-          linear-gradient(165deg, #82A2B8 0%, #305470 45%, #0B1622 100%)
+          linear-gradient(165deg, #E2EAF2 0%, #5C8BA6 45%, #1F3A4D 100%)
         `,
         soundType: 'highPass',
         soundVol: 0.18
@@ -457,11 +378,11 @@
         name: 'ZENITH SKY',
         topColor: '#C4E4F7',
         midColor: '#3681B3',
-        bottomColor: '#0E293D',
+        bottomColor: '#123D59',
         accentColor: '#D8F0FF',
         backdrop: `
-          radial-gradient(circle at 30% 0%, rgba(135, 205, 245, 0.5) 0%, transparent 65%),
-          linear-gradient(165deg, #5A9BC2 0%, #1A4D73 45%, #051826 100%)
+          radial-gradient(circle at 30% 0%, rgba(216, 240, 255, 0.45) 0%, transparent 60%),
+          linear-gradient(165deg, #C4E4F7 0%, #3681B3 45%, #123D59 100%)
         `,
         soundType: 'bandPass',
         soundVol: 0.22
@@ -471,11 +392,11 @@
         name: 'TWILIGHT DUSK',
         topColor: '#E8D4CC',
         midColor: '#2C5F8A',
-        bottomColor: '#0E1D2D',
+        bottomColor: '#13283D',
         accentColor: '#F5E6E1', 
         backdrop: `
-          radial-gradient(circle at 30% 0%, rgba(245, 175, 145, 0.4) 0%, transparent 65%),
-          linear-gradient(165deg, #A87C70 0%, #2A5075 45%, #081320 100%)
+          radial-gradient(circle at 30% 0%, rgba(245, 230, 225, 0.4) 0%, transparent 60%),
+          linear-gradient(165deg, #E8D4CC 0%, #2C5F8A 45%, #13283D 100%)
         `,
         soundType: 'lowPass',
         soundVol: 0.20
@@ -483,13 +404,13 @@
       {
         id: 'night',
         name: 'ETHEREAL NIGHT',
-        topColor: '#5A6C82',
-        midColor: '#1A2A3D',
-        bottomColor: '#060B12',
-        accentColor: '#A5BBD4',
+        topColor: '#4A6278',
+        midColor: '#1E3247',
+        bottomColor: '#09131C',
+        accentColor: '#95B3D4',
         backdrop: `
-          radial-gradient(circle at 30% 0%, rgba(105, 135, 175, 0.3) 0%, transparent 60%),
-          linear-gradient(165deg, #3A526A 0%, #122030 45%, #03060A 100%)
+          radial-gradient(circle at 30% 0%, rgba(149, 179, 212, 0.3) 0%, transparent 60%),
+          linear-gradient(165deg, #4A6278 0%, #1E3247 45%, #09131C 100%)
         `,
         soundType: 'pureNoise',
         soundVol: 0.15
@@ -538,8 +459,8 @@
 
       ctx.globalCompositeOperation = 'screen';
       const glowGrad = ctx.createRadialGradient(w * 0.3, 0, 0, w * 0.3, 0, w * 0.85);
-      glowGrad.addColorStop(0, phase.accentColor + '88'); 
-      glowGrad.addColorStop(0.5, phase.accentColor + '22'); 
+      glowGrad.addColorStop(0, phase.accentColor + '88');
+      glowGrad.addColorStop(0.5, phase.accentColor + '22');
       glowGrad.addColorStop(1, phase.accentColor + '00');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, w, h);
@@ -578,7 +499,7 @@
       const luminance = (pixel[0] * 0.299 + pixel[1] * 0.587 + pixel[2] * 0.114) / 255;
       const clarity = (luminance * 100).toFixed(1);
 
-      hexReadout.textContent = `HEX: ${hex.toUpperCase()}`;
+      hexReadout.textContent = `HEX: ${hex.toUpperCase()} · CLARITY: ${clarity}%`;
     }
 
     function updatePointer(x, y) {
@@ -618,7 +539,7 @@
       const grad = offCtx.createLinearGradient(0, 0, 0, 2340);
       grad.addColorStop(0, selectedColor);
       grad.addColorStop(0.35, selectedColor);
-      grad.addColorStop(1, '#08121C'); // 出力もディープブルー基調へ
+      grad.addColorStop(1, '#F6F8FA');
 
       offCtx.fillStyle = grad;
       offCtx.fillRect(0, 0, 1080, 2340);
@@ -654,7 +575,7 @@
         const cx = c.getContext('2d');
         const g = cx.createLinearGradient(0, 0, 0, 96);
         g.addColorStop(0, col);
-        g.addColorStop(1, '#08121C');
+        g.addColorStop(1, '#F6F8FA');
         cx.fillStyle = g;
         cx.fillRect(0, 0, 54, 96);
 
@@ -696,31 +617,58 @@
     window.addEventListener('resize', setupCanvas);
 
     /* ==============================================================
-       アンビエント環境音（Web Audio API）
+       アンビエント環境音（iOS Safariの自動再生制限を突破する完全同期処理）
        ============================================================== */
     let audioContext = null;
     let whiteNoiseSource = null;
     let filterNode = null;
     let gainNode = null;
     let isPlaying = false;
+    let isAudioUnlocked = false; // iOS用アンロックフラグ
 
     ambientToggleBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
     });
-    ambientToggleBtn.addEventListener('click', async (e) => {
+
+    // iOS/Safari では非同期(async/await)を挟むとブロックされるため、
+    // click / touchend イベントの同期的コールバック内で直接生成とresumeを呼ぶ
+    ambientToggleBtn.addEventListener('touchend', (e) => {
       e.stopPropagation();
-      await toggleAmbientSound();
+      e.preventDefault(); // clickの二重発火防止
+      handleAudioToggle();
+    }, { passive: false });
+
+    ambientToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleAudioToggle();
     });
 
-    async function toggleAmbientSound() {
+    function handleAudioToggle() {
+      // 1. 同期的にAudioContextを初期化
       if (!audioContext) {
-        initAudioContext();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioContextClass();
+        setupAudioNodes();
       }
 
+      // 2. iOS用 Silent Play Hack (最初の1回のみ無音を強制再生してパイプラインを開通させる)
+      if (!isAudioUnlocked) {
+        const osc = audioContext.createOscillator();
+        const silentGain = audioContext.createGain();
+        silentGain.gain.value = 0;
+        osc.connect(silentGain);
+        silentGain.connect(audioContext.destination);
+        osc.start(0);
+        osc.stop(audioContext.currentTime + 0.01);
+        isAudioUnlocked = true;
+      }
+
+      // 3. suspended状態なら同期的にresumeする
       if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+        audioContext.resume();
       }
 
+      // 4. 音量のフェード処理
       const now = audioContext.currentTime;
       const targetVol = PHASES[currentPhaseIndex].soundVol;
 
@@ -743,10 +691,7 @@
       }
     }
 
-    function initAudioContext() {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      audioContext = new AudioContextClass();
-
+    function setupAudioNodes() {
       const bufferSize = audioContext.sampleRate * 2;
       const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
       const output = noiseBuffer.getChannelData(0);
