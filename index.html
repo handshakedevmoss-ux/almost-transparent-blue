@@ -384,7 +384,7 @@
     <div class="glass-wave wave2"></div>
   </div>
 
-  <div class="toast" id="toast">壁紙をダウンロードしました</div>
+  <div class="toast" id="toast">壁紙を生成しました</div>
 
   <div class="app-shell">
     <div class="player-card">
@@ -610,7 +610,7 @@
     window.addEventListener('pointercancel', () => { isInteracting = false; });
 
     /* ==============================================================
-       変更点: 出力用壁紙画像のCanvas描画にHEXの縦書き印字を追加
+       変更点: iOSSafari対応の画像プレビュー生成ロジックへ変更
        ============================================================== */
     function generateWallpaper() {
       const offCanvas = document.createElement('canvas');
@@ -656,13 +656,11 @@
         pathFunc(offCtx, w, h);
         offCtx.closePath();
 
-        // 影（黒を避け、透過した深い青を使用）
         offCtx.shadowColor = shadowParams.color;
         offCtx.shadowBlur = shadowParams.blur;
         offCtx.shadowOffsetX = shadowParams.offsetX;
         offCtx.shadowOffsetY = shadowParams.offsetY;
 
-        // ガラスの厚み（塗り）
         const fillGrad = offCtx.createLinearGradient(0, 0, w, h);
         fillParams.stops.forEach(s => fillGrad.addColorStop(s.offset, s.color));
         offCtx.fillStyle = fillGrad;
@@ -671,7 +669,6 @@
         offCtx.restore();
       }
 
-      // 左側の波
       drawSoftGlassFold(
         (ctx, w, h) => {
           ctx.moveTo(-200, -200); 
@@ -688,7 +685,6 @@
         }
       );
 
-      // 右側の波
       drawSoftGlassFold(
         (ctx, w, h) => {
           ctx.moveTo(w + 200, -200);
@@ -705,7 +701,6 @@
         }
       );
 
-      // 下部の波
       drawSoftGlassFold(
         (ctx, w, h) => {
           ctx.moveTo(-200, h + 200);
@@ -741,37 +736,71 @@
       offCtx.textAlign = 'left';
       offCtx.textBaseline = 'middle';
       
-      // キャンバス右端に沿って縦書き（90度回転）で配置
       offCtx.translate(w - 40, h * 0.1);
       offCtx.rotate(90 * Math.PI / 180);
       
       const textString = hexList.join('    —    ');
       
-      // ガラスへの刻印（エンボス）効果
       offCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       offCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
       offCtx.shadowBlur = 10;
       offCtx.shadowOffsetY = 2;
       offCtx.fillText(textString, 0, 0);
 
-      // エッジの光沢（ハイライト）
       offCtx.shadowColor = 'transparent';
       offCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
       offCtx.fillText(textString, -0.5, -0.5);
 
-      // くぼみの影
       offCtx.fillStyle = 'rgba(0, 20, 50, 0.25)';
       offCtx.fillText(textString, 1, 1);
 
       offCtx.restore();
 
-      const link = document.createElement('a');
-      link.download = `almost-transparent-blue-${Date.now()}.png`;
-      link.href = offCanvas.toDataURL('image/png');
-      link.click();
+      // --- 4. 生成した画像をDOMに追加してプレビュー表示（iOS対応） ---
+      const dataUrl = offCanvas.toDataURL('image/png');
+
+      const imgView = document.createElement('div');
+      imgView.style.position = 'fixed';
+      imgView.style.top = '0';
+      imgView.style.left = '0';
+      imgView.style.width = '100vw';
+      imgView.style.height = '100vh';
+      imgView.style.zIndex = '9999';
+      imgView.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+      imgView.style.display = 'flex';
+      imgView.style.flexDirection = 'column';
+      imgView.style.justifyContent = 'center';
+      imgView.style.alignItems = 'center';
+      imgView.style.backdropFilter = 'blur(15px)';
+      imgView.style.webkitBackdropFilter = 'blur(15px)';
+
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.maxWidth = '80%';
+      img.style.maxHeight = '80%';
+      img.style.objectFit = 'contain';
+      img.style.borderRadius = '16px';
+      img.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)';
+      
+      const hint = document.createElement('div');
+      hint.textContent = '画像を長押しして保存 / タップして閉じる';
+      hint.style.color = 'rgba(255,255,255,0.8)';
+      hint.style.marginTop = '24px';
+      hint.style.fontSize = '0.9rem';
+      hint.style.fontWeight = '500';
+      hint.style.letterSpacing = '0.05em';
+
+      imgView.appendChild(img);
+      imgView.appendChild(hint);
+
+      imgView.onclick = () => {
+        document.body.removeChild(imgView);
+      };
+
+      document.body.appendChild(imgView);
 
       pushHistory(selectedColor);
-      showToast('壁紙をダウンロードしました');
+      showToast('壁紙を生成しました（長押しで保存）');
     }
 
     function pushHistory(color) {
