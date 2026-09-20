@@ -39,7 +39,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       overflow-x: hidden;
       overflow-y: auto;
-      padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+      padding: calc(42px + env(safe-area-inset-top)) 16px calc(42px + env(safe-area-inset-bottom));
       position: relative;
     }
 
@@ -453,15 +453,15 @@
         soundVol: 0.18
       },
       {
-        id: 'verve-ignite',
-        name: 'VERVE IGNITE',
-        topColor: '#FF4500',
-        midColor: '#FFA500',
+        id: 'cave-cyan',
+        name: 'CAVE CYAN',
+        topColor: '#A3D9D3',
+        midColor: '#4BC0C8',
         bottomColor: '#1E3141',
-        accentColor: '#FFD700',
+        accentColor: '#E0F7FA',
         backdrop: `
-          radial-gradient(circle at center, rgba(255, 215, 0, 0.5) 0%, transparent 70%),
-          linear-gradient(165deg, rgba(255, 215, 0, 0.2) 0%, #1E3141 100%)
+          radial-gradient(circle at center, rgba(163, 217, 211, 0.5) 0%, transparent 70%),
+          linear-gradient(165deg, rgba(163, 217, 211, 0.2) 0%, #1E3141 100%)
         `,
         soundType: 'bandPass',
         soundVol: 0.22
@@ -496,8 +496,8 @@
       }
     ];
 
-    let currentPhaseIndex = 1; // VERVE IGNITEを初期フェーズに
-    let selectedColor = '#FFA500'; // VERVE IGNITEの中間色を初期色に
+    let currentPhaseIndex = 0; // CAVE DAWN
+    let selectedColor = '#2C4B61';
     let historyList = [];
 
     const canvas = document.getElementById('colorCanvas');
@@ -706,6 +706,37 @@
         }
       );
 
+      offCtx.save();
+      // 小さく（1080px幅に対して24px）
+      offCtx.font = '300 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif'; 
+      offCtx.textAlign = 'left';
+      offCtx.textBaseline = 'bottom';
+      
+      const textX = 80; // 左からの余白
+      const textYStart = h - 220; // 下からの余白 
+      const lineHeight = 40; // 行間
+
+      const line1 = '飛行機の音ではなかった。耳の後ろ側を飛んでいた虫の羽音だった';
+      const line2 = '限りなく透明に近いブルー 村上龍';
+
+      offCtx.fillStyle = 'rgba(0, 20, 50, 0.25)';
+      offCtx.fillText(line1, textX + 1, textYStart + 1);
+      offCtx.fillText(line2, textX + 1, textYStart + lineHeight + 1);
+
+      offCtx.shadowColor = 'transparent';
+      offCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      offCtx.fillText(line1, textX - 0.5, textYStart - 0.5);
+      offCtx.fillText(line2, textX - 0.5, textYStart + lineHeight - 0.5);
+
+      offCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      offCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      offCtx.shadowBlur = 10;
+      offCtx.shadowOffsetY = 2;
+      offCtx.fillText(line1, textX, textYStart);
+      offCtx.fillText(line2, textX, textYStart + lineHeight);
+
+      offCtx.restore();
+
       const link = document.createElement('a');
       link.download = `almost-transparent-blue-${Date.now()}.png`;
       link.href = offCanvas.toDataURL('image/png');
@@ -803,7 +834,7 @@
         if (saved) historyList = JSON.parse(saved);
       } catch (e) {}
       if (!historyList.length) {
-        historyList = ['#FFA500', '#FFD700', '#2C4B61']; // デフォルト履歴も更新
+        historyList = ['#2C4B61', '#4BC0C8', '#FFFACD']; // デフォルト履歴も更新
       }
       renderHistory();
       
