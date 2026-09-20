@@ -138,7 +138,7 @@
 
     .card-top-bar {
       display: flex;
-      justify-content: flex-end; /* 修正 */
+      justify-content: flex-end;
       align-items: center;
       padding-right: 6px;
     }
@@ -417,7 +417,7 @@
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
         </button>
 
-        <button class="main-play-btn" id="generateBtn" title="壁紙を生成してプレビュー表示">
+        <button class="main-play-btn" id="generateBtn" title="壁紙を生成してダウンロード">
           <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         </button>
 
@@ -435,69 +435,69 @@
 
   <script>
     /* ==============================================================
-       「透明に近いブルー」を軸としたAmbient Chillフェーズ定義
+       添付画像のカラーに基づいた再構成フェーズ定義
        ============================================================== */
     const PHASES = [
       {
-        id: 'dawn',
-        name: 'DAWN MIST',
-        topColor: '#E2EAF2',
-        midColor: '#5C8BA6',
-        bottomColor: '#1F3A4D',
-        accentColor: '#FFFFFF',
+        id: 'cave-dawn',
+        name: 'CAVE DAWN',
+        topColor: '#2C4B61',
+        midColor: '#1E3141',
+        bottomColor: '#101A24',
+        accentColor: '#FFFACD',
         backdrop: `
-          radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, transparent 70%),
-          linear-gradient(165deg, rgba(255, 255, 255, 0.2) 0%, #1F3A4D 100%)
+          radial-gradient(circle at center, rgba(255, 250, 205, 0.4) 0%, transparent 70%),
+          linear-gradient(165deg, rgba(255, 250, 205, 0.2) 0%, #101A24 100%)
         `,
         soundType: 'highPass',
         soundVol: 0.18
       },
       {
-        id: 'zenith',
-        name: 'ZENITH SKY',
-        topColor: '#C4E4F7',
-        midColor: '#3681B3',
-        bottomColor: '#123D59',
-        accentColor: '#D8F0FF',
+        id: 'verve-ignite',
+        name: 'VERVE IGNITE',
+        topColor: '#FF4500',
+        midColor: '#FFA500',
+        bottomColor: '#1E3141',
+        accentColor: '#FFD700',
         backdrop: `
-          radial-gradient(circle at center, rgba(216, 240, 255, 0.9) 0%, transparent 70%),
-          linear-gradient(165deg, rgba(216, 240, 255, 0.2) 0%, #123D59 100%)
+          radial-gradient(circle at center, rgba(255, 215, 0, 0.5) 0%, transparent 70%),
+          linear-gradient(165deg, rgba(255, 215, 0, 0.2) 0%, #1E3141 100%)
         `,
         soundType: 'bandPass',
         soundVol: 0.22
       },
       {
-        id: 'dusk',
-        name: 'TWILIGHT DUSK',
-        topColor: '#E8D4CC',
-        midColor: '#2C5F8A',
-        bottomColor: '#13283D',
-        accentColor: '#F5E6E1', 
+        id: 'core-light',
+        name: 'CORE LIGHT',
+        topColor: '#FFFACD',
+        midColor: '#408C99',
+        bottomColor: '#1E3141',
+        accentColor: '#FFFFFF',
         backdrop: `
-          radial-gradient(circle at center, rgba(245, 230, 225, 0.9) 0%, transparent 70%),
-          linear-gradient(165deg, rgba(245, 230, 225, 0.2) 0%, #13283D 100%)
+          radial-gradient(circle at center, rgba(255, 255, 255, 0.6) 0%, transparent 70%),
+          linear-gradient(165deg, rgba(255, 255, 255, 0.2) 0%, #1E3141 100%)
         `,
         soundType: 'lowPass',
         soundVol: 0.20
       },
       {
-        id: 'night',
-        name: 'ETHEREAL NIGHT',
-        topColor: '#4A6278',
-        midColor: '#1E3247',
-        bottomColor: '#09131C',
-        accentColor: '#95B3D4',
+        id: 'abyssal-deep',
+        name: 'ABYSSAL DEEP',
+        topColor: '#1E3141',
+        midColor: '#101A24',
+        bottomColor: '#020508',
+        accentColor: '#2C4B61',
         backdrop: `
-          radial-gradient(circle at center, rgba(149, 179, 212, 0.8) 0%, transparent 70%),
-          linear-gradient(165deg, rgba(149, 179, 212, 0.1) 0%, #09131C 100%)
+          radial-gradient(circle at center, rgba(44, 75, 97, 0.3) 0%, transparent 70%),
+          linear-gradient(165deg, rgba(44, 75, 97, 0.1) 0%, #020508 100%)
         `,
         soundType: 'pureNoise',
         soundVol: 0.15
       }
     ];
 
-    let currentPhaseIndex = 2; // DUSK
-    let selectedColor = '#2C5F8A';
+    let currentPhaseIndex = 1; // VERVE IGNITEを初期フェーズに
+    let selectedColor = '#FFA500'; // VERVE IGNITEの中間色を初期色に
     let historyList = [];
 
     const canvas = document.getElementById('colorCanvas');
@@ -609,78 +609,6 @@
     window.addEventListener('pointerup', () => { isInteracting = false; });
     window.addEventListener('pointercancel', () => { isInteracting = false; });
 
-    /* ==============================================================
-       ヘルパー関数: プラズマフラクタル雲を生成し selectedColor で色付けする (未使用)
-       ============================================================== */
-    function generateCloudTexture(width, height, selectedColor) {
-        const cloudCanvas = document.createElement('canvas');
-        cloudCanvas.width = width;
-        cloudCanvas.height = height;
-        const ctx = cloudCanvas.getContext('2d');
-
-        const imageData = ctx.createImageData(width, height);
-        const data = imageData.data;
-
-        // 白黒の雲ImageDataを生成 (プラズマフラクタルを調整)
-        const size = Math.pow(2, Math.ceil(Math.log2(Math.max(width, height))));
-        const grid = new Float32Array(size * size);
-        grid[0] = Math.random();
-        grid[size - 1] = Math.random();
-        grid[(size - 1) * size] = Math.random();
-        grid[size * size - 1] = Math.random();
-
-        function plasma(x, y, w, h) {
-            if (w < 1 || h < 1) return;
-            const roughnessFactor = Math.pow((w + h), 1.3) / size; // 調整: ノイズを少し鋭く
-            const c1 = grid[y * size + x];
-            const c2 = grid[y * size + x + w];
-            const c3 = grid[(y + h) * size + x];
-            const c4 = grid[(y + h) * size + x + w];
-            const cm = (c1 + c2 + c3 + c4) / 4 + (Math.random() - 0.5) * roughnessFactor;
-            
-            if (grid[y * size + x + (w >> 1)] === 0) grid[y * size + x + (w >> 1)] = (c1 + c2) / 2;
-            if (grid[(y + (h >> 1)) * size + x] === 0) grid[(y + (h >> 1)) * size + x] = (c1 + c3) / 2;
-            if (grid[(y + (h >> 1)) * size + x + w] === 0) grid[(y + (h >> 1)) * size + x + w] = (c2 + c4) / 2;
-            if (grid[(y + h) * size + x + (w >> 1)] === 0) grid[(y + h) * size + x + (w >> 1)] = (c3 + c4) / 2;
-            if (grid[(y + (h >> 1)) * size + x + (w >> 1)] === 0) grid[(y + (h >> 1)) * size + x + (w >> 1)] = cm;
-            
-            plasma(x, y, w >> 1, h >> 1);
-            plasma(x + (w >> 1), y, w >> 1, h >> 1);
-            plasma(x, y + (h >> 1), w >> 1, h >> 1);
-            plasma(x + (w >> 1), y + (h >> 1), w >> 1, h >> 1);
-        }
-        plasma(0, 0, size - 1, size - 1);
-
-        const sc = hexToRgb(selectedColor);
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const i = (y * width + x);
-                let val = grid[y * size + x];
-                // 値の範囲を調整: 雲（白）を増やす、滑らかにする
-                val = Math.pow(Math.min(1, Math.max(0, val)), 2); // 0〜1にクリップ、指数
-                val = Math.min(255, Math.max(0, (val * 1.5 - 0.25) * 255)); // 範囲を調整、255倍
-
-                // selectedColorとのブレンド (スクリーンモードを模倣: 白を保持)
-                // 雲（白）を白、空（selectedColor）を着色、に変更
-                data[i * 4] = sc.r + val * (255 - sc.r) / 255;
-                data[i * 4 + 1] = sc.g + val * (255 - sc.g) / 255;
-                data[i * 4 + 2] = sc.b + val * (255 - sc.b) / 255;
-                data[i * 4 + 3] = 255;
-            }
-        }
-        ctx.putImageData(imageData, 0, 0);
-        return cloudCanvas;
-    }
-    function hexToRgb(hex) {
-        const r = parseInt(hex.substring(1, 3), 16);
-        const g = parseInt(hex.substring(3, 5), 16);
-        const b = parseInt(hex.substring(5, 7), 16);
-        return { r, g, b };
-    }
-
-    /* ==============================================================
-       変更点: 出力用壁紙画像のCanvas描画を背景のようなliquid grassデザインに修正
-       ============================================================== */
     function generateWallpaper() {
       const offCanvas = document.createElement('canvas');
       const w = 1080;
@@ -689,28 +617,23 @@
       offCanvas.height = h;
       const offCtx = offCanvas.getContext('2d');
 
-      // --- 1. 背景のようなliquid grassデザインに修正 ---
-      // 選択された色からディープブルーへの深い縦方向のグラデーション
       const baseGrad = offCtx.createLinearGradient(0, 0, 0, h);
-      baseGrad.addColorStop(0, selectedColor); // 上部: 選択された色
-      baseGrad.addColorStop(1, '#030811'); // 下部: HTML背景のディープブルー
+      baseGrad.addColorStop(0, selectedColor);
+      baseGrad.addColorStop(1, '#030811');
       offCtx.fillStyle = baseGrad;
       offCtx.fillRect(0, 0, w, h);
 
-      // --- 2. Liquid Glass 波形レイヤー ---
       function drawSoftGlassFold(pathFunc, shadowParams, fillParams) {
         offCtx.save();
         offCtx.beginPath();
         pathFunc(offCtx, w, h);
         offCtx.closePath();
 
-        // 影（黒を避け、透過した深い青を使用）
         offCtx.shadowColor = shadowParams.color;
         offCtx.shadowBlur = shadowParams.blur;
         offCtx.shadowOffsetX = shadowParams.offsetX;
         offCtx.shadowOffsetY = shadowParams.offsetY;
 
-        // ガラスの厚み（塗り）
         const fillGrad = offCtx.createLinearGradient(0, 0, w, h);
         fillParams.stops.forEach(s => fillGrad.addColorStop(s.offset, s.color));
         offCtx.fillStyle = fillGrad;
@@ -719,182 +642,77 @@
         offCtx.restore();
       }
 
-      // 画面外から描画を始めることで「四角く囲われたフレーム感」を完全に消去
-      // 左側の波
       drawSoftGlassFold(
         (ctx, w, h) => {
-          ctx.moveTo(-200, -200); 
-          ctx.lineTo(w * 0.15, -200);
-          ctx.bezierCurveTo(w * -0.05, h * 0.3, w * 0.3, h * 0.7, w * 0.08, h + 200);
-          ctx.lineTo(-200, h + 200); 
+          ctx.moveTo(0, h * 0.1);
+          ctx.bezierCurveTo(w * 0.3, h * 0.05, w * 0.6, h * 0.2, w, h * 0.15);
+          ctx.lineTo(w, 0);
+          ctx.lineTo(0, 0);
         },
-        { color: 'rgba(5, 20, 50, 0.4)', blur: 60, offsetX: 20, offsetY: 10 },
+        { color: 'rgba(255, 255, 255, 0.1)', blur: 50, offsetX: 0, offsetY: 10 },
         {
           stops: [
-            { offset: 0, color: 'rgba(255,255,255,0.2)' },
-            { offset: 1, color: 'rgba(0,30,60,0.05)' }
+            { offset: 0, color: 'rgba(255, 255, 255, 0.05)' },
+            { offset: 1, color: 'rgba(255, 255, 255, 0)' }
           ]
         }
       );
 
-      // 右側の波
       drawSoftGlassFold(
         (ctx, w, h) => {
-          ctx.moveTo(w + 200, -200);
-          ctx.lineTo(w * 0.85, -200);
-          ctx.bezierCurveTo(w * 1.05, h * 0.35, w * 0.7, h * 0.65, w * 0.92, h + 200);
-          ctx.lineTo(w + 200, h + 200);
+          ctx.moveTo(0, h * 0.85);
+          ctx.bezierCurveTo(w * 0.4, h * 0.9, w * 0.7, h * 0.8, w, h * 0.88);
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
         },
-        { color: 'rgba(2, 10, 30, 0.5)', blur: 70, offsetX: -20, offsetY: 20 },
+        { color: 'rgba(0, 0, 0, 0.5)', blur: 60, offsetX: 0, offsetY: -10 },
         {
           stops: [
-            { offset: 0, color: 'rgba(0,20,50,0.1)' },
-            { offset: 1, color: 'rgba(255,255,255,0.08)' }
+            { offset: 0, color: 'rgba(16, 28, 48, 0.4)' },
+            { offset: 1, color: 'rgba(5, 15, 30, 0.8)' }
           ]
         }
       );
 
-      // 下部の波
       drawSoftGlassFold(
         (ctx, w, h) => {
-          ctx.moveTo(-200, h + 200);
-          ctx.lineTo(-200, h * 0.88);
-          ctx.bezierCurveTo(w * 0.35, h * 0.82, w * 0.65, h * 0.96, w + 200, h * 0.9);
-          ctx.lineTo(w + 200, h + 200);
+          ctx.moveTo(w * 0.2, h);
+          ctx.bezierCurveTo(w * 0.1, h * 0.7, w * 0.4, h * 0.4, w * 0.3, 0);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(0, h);
         },
-        { color: 'rgba(5, 20, 40, 0.6)', blur: 50, offsetX: 0, offsetY: -10 },
+        { color: 'rgba(255, 255, 255, 0.05)', blur: 40, offsetX: 10, offsetY: 0 },
         {
           stops: [
-            { offset: 0, color: 'rgba(255,255,255,0.15)' },
-            { offset: 1, color: 'rgba(10,30,50,0.25)' }
+            { offset: 0, color: selectedColor + 'aa' },
+            { offset: 1, color: 'rgba(255, 255, 255, 0.01)' }
           ]
         }
       );
 
-      // --- NEW: ユーザー要求テキスト描画 ---
-      offCtx.save(); // 現在の状態を保存
+      drawSoftGlassFold(
+        (ctx, w, h) => {
+          ctx.moveTo(w * 0.8, 0);
+          ctx.bezierCurveTo(w * 0.9, h * 0.3, w * 0.6, h * 0.6, w * 0.7, h);
+          ctx.lineTo(w, h);
+          ctx.lineTo(w, 0);
+        },
+        { color: 'rgba(0, 0, 0, 0.4)', blur: 50, offsetX: -10, offsetY: 0 },
+        {
+          stops: [
+            { offset: 0, color: 'rgba(16, 28, 48, 0.3)' },
+            { offset: 1, color: selectedColor + 'aa' }
+          ]
+        }
+      );
 
-      // フォント設定 (小さく、調和するフォント)
-      offCtx.font = '300 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
-      offCtx.textAlign = 'left';
-      offCtx.textBaseline = 'bottom';
-
-      // 配置座標 (左下の静かなスペース)
-      const textX = 80; // 左からの余白
-      const textYStart = h - 180; // 下からの余白 (HEXテキストより上に)
-      const lineHeight = 24; // 行間
-
-      // テキスト内容
-      const line1 = '飛行機の音ではなかった。耳の後ろ側を飛んでいた虫の羽音だった。';
-      const line2 = '限りなく透明に近いブルー 村上龍';
-
-      // ガラスへの刻印（エンボス）効果 (HEXテキスト描画ロジックを参考に調整)
-      // 1. 影（くぼみ）
-      offCtx.fillStyle = 'rgba(0, 20, 50, 0.25)';
-      offCtx.fillText(line1, textX + 1, textYStart + 1);
-      offCtx.fillText(line2, textX + 1, textYStart + lineHeight + 1);
-
-      // 2. エッジの光沢（ハイライト）
-      offCtx.shadowColor = 'transparent';
-      offCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      offCtx.fillText(line1, textX - 0.5, textYStart - 0.5);
-      offCtx.fillText(line2, textX - 0.5, textYStart + lineHeight - 0.5);
-
-      // 3. 本体（ガラス透過）
-      offCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      offCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-      offCtx.shadowBlur = 10;
-      offCtx.shadowOffsetY = 2;
-      offCtx.fillText(line1, textX, textYStart);
-      offCtx.fillText(line2, textX, textYStart + lineHeight);
-
-      offCtx.restore(); // 状態を復元
-      // --- END NEW ---
-
-      // --- 3. ランダムなHEXの抽出とLiquid Glass風テキスト（縦書き）描画 ---
-      const imgData = offCtx.getImageData(0, 0, w, h).data;
-      const hexList = [];
-      for (let i = 0; i < 5; i++) {
-        const rx = Math.floor(Math.random() * w);
-        const ry = Math.floor(Math.random() * h);
-        const idx = (ry * w + rx) * 4;
-        const r = imgData[idx];
-        const g = imgData[idx+1];
-        const b = imgData[idx+2];
-        const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
-        hexList.push(hex);
-      }
-
-      offCtx.save();
-      offCtx.font = '300 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
-      offCtx.textAlign = 'left';
-      offCtx.textBaseline = 'middle';
-      
-      offCtx.translate(w - 40, h * 0.1);
-      offCtx.rotate(90 * Math.PI / 180);
-      
-      const textString = hexList.join('    —    ');
-      
-      offCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      offCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-      offCtx.shadowBlur = 10;
-      offCtx.shadowOffsetY = 2;
-      offCtx.fillText(textString, 0, 0);
-
-      offCtx.shadowColor = 'transparent';
-      offCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      offCtx.fillText(textString, -0.5, -0.5);
-
-      offCtx.fillStyle = 'rgba(0, 20, 50, 0.25)';
-      offCtx.fillText(textString, 1, 1);
-
-      offCtx.restore();
-
-      // --- 4. 生成した画像をDOMに追加してプレビュー表示（iOS対応） ---
-      const dataUrl = offCanvas.toDataURL('image/png');
-
-      const imgView = document.createElement('div');
-      imgView.style.position = 'fixed';
-      imgView.style.top = '0';
-      imgView.style.left = '0';
-      imgView.style.width = '100vw';
-      imgView.style.height = '100vh';
-      imgView.style.zIndex = '9999';
-      imgView.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
-      imgView.style.display = 'flex';
-      imgView.style.flexDirection = 'column';
-      imgView.style.justifyContent = 'center';
-      imgView.style.alignItems = 'center';
-      imgView.style.backdropFilter = 'blur(15px)';
-      imgView.style.webkitBackdropFilter = 'blur(15px)';
-
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.style.maxWidth = '80%';
-      img.style.maxHeight = '80%';
-      img.style.objectFit = 'contain';
-      img.style.borderRadius = '16px';
-      img.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)';
-      
-      const hint = document.createElement('div');
-      hint.textContent = '画像を長押しして保存 / タップして閉じる';
-      hint.style.color = 'rgba(255,255,255,0.8)';
-      hint.style.marginTop = '24px';
-      hint.style.fontSize = '0.9rem';
-      hint.style.fontWeight = '500';
-      hint.style.letterSpacing = '0.05em';
-
-      imgView.appendChild(img);
-      imgView.appendChild(hint);
-
-      imgView.onclick = () => {
-        document.body.removeChild(imgView);
-      };
-
-      document.body.appendChild(imgView);
+      const link = document.createElement('a');
+      link.download = `almost-transparent-blue-${Date.now()}.png`;
+      link.href = offCanvas.toDataURL('image/png');
+      link.click();
 
       pushHistory(selectedColor);
-      showToast('壁紙を生成しました（長押しで保存）');
+      showToast('壁紙をダウンロードしました');
     }
 
     function pushHistory(color) {
@@ -931,8 +749,8 @@
           
           const hex = col.replace('#', '');
           const tr = parseInt(hex.substring(0, 2), 16);
-          const tg = parseInt(hex.substring(3, 5), 16);
-          const tb = parseInt(hex.substring(5, 7), 16);
+          const tg = parseInt(hex.substring(2, 4), 16);
+          const tb = parseInt(hex.substring(4, 6), 16);
 
           const w = canvas.width;
           const h = canvas.height;
@@ -985,7 +803,7 @@
         if (saved) historyList = JSON.parse(saved);
       } catch (e) {}
       if (!historyList.length) {
-        historyList = ['#2C5F8A', '#3681B3', '#5C8BA6'];
+        historyList = ['#FFA500', '#FFD700', '#2C4B61']; // デフォルト履歴も更新
       }
       renderHistory();
       
